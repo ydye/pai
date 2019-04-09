@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exec 13>/root/test_handler/YarnContainerDebug.log
+exec 13>YarnContainerDebug.log
 BASH_XTRACEFD=13
 
 function sigterm_handler()
