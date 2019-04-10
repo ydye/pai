@@ -19,22 +19,12 @@
 
 cd /
 
-wget https://issues.apache.org/jira/secure/attachment/12940533/hadoop-2.9.0.gpu-port.20180920.patch -O hadoop-2.9.0.gpu-port.patch
-# patch for webhdfs upload issue when using nginx as a reverse proxy
-wget https://issues.apache.org/jira/secure/attachment/12933562/HDFS-13773.patch
-
-git clone https://github.com/apache/hadoop.git
+git clone https://github.com/mzmssg/hadoop.git
 
 cd hadoop
 
-git checkout branch-2.9.0
+git checkout zimiao/remove_duplicate_diagnostic
 
-git apply /hadoop-2.9.0.gpu-port.patch
-git apply /HDFS-13773.patch
-git apply /docker-executor.patch
-# to avoid potential endless loop, refer to https://issues.apache.org/jira/browse/YARN-8513?page=com.atlassian.jira.plugin.system.issuetabpanels%3Aall-tabpanel
-git apply /YARN-8896-2.9.0.patch
-git apply /hadoop-ai-fix.patch
 
 mvn package -Pdist,native -DskipTests -Dmaven.javadoc.skip=true -Dtar
 
