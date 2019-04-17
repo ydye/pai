@@ -55,7 +55,7 @@ spec:
       - name: docker-socket
         hostPath:
           path: /var/run/docker.sock
-      -	name: cleaner-logs
+      - name: cleaner-logs
         hostPath:
           path: {{ cluster_cfg["cluster"]["common"]["data-path"] }}/yarn/node/userlogs
       tolerations:
