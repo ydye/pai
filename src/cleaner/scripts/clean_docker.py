@@ -23,6 +23,7 @@ import subprocess
 import multiprocessing
 import re
 import time
+import os
 
 class DockerCleaner(LoggerMixin):
     def __init__(self, threshold, interval, timeout=timedelta(hours=1)):
@@ -67,7 +68,7 @@ class DockerCleaner(LoggerMixin):
             size = 0
             used = 0
             usep = 0
-        self.logger.info("Checking disk, disk usage = {0}%".format(size))
+        self.logger.info("Checking disk, disk usage = {0}%".format(usep))
         return size, used, usep
 
 
@@ -115,16 +116,15 @@ class DockerCleaner(LoggerMixin):
                 error_filename = "{0}/diskCleaner.pai.error".format(full_path)
                 timestamp = int(time.time())
                 try:
-                    fp = open(error_filename, w)
+                    fp = open(error_filename, "w")
                     fp.writelines([
                         "{0} ERROR ACTION \"kill\"\n".format(timestamp),
                         "{0} ERROR REASON \"Container {1} killed due to disk pressure. Disk size: {2}, Used: {3}, Cleaner threshold: {4}, Container cost: {5} \"\n".format(timestamp, container_name, size, "{0}({1}%)".format(used, usep), self.__threshold + "%", containers[0][4]),
                         "{0} ERROR SOLUTOIN \"Node disk is full, please try another time. If your job needs large space, please use NAS to store data.\"\n".format(timestamp)
                         ])
+                    fp.close()
                 except:
                     self.logger.error("Failed to write error log, skipped")
-
-
 
             subprocess.Popen(["docker", "kill", "--signal=10", containers[0][1]])
 
