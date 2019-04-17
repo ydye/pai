@@ -84,7 +84,7 @@ class DockerCleaner(LoggerMixin):
     def kill_largest_container(self, size, used, usep):
         containers = []
         # Only try to stop PAI jobs and user created containers
-        containers_source = subprocess.Popen(["docker", "ps", "-a", "--format", r'{{.ID}}\t{{.Image}}\t{{.Size}}\t{{.Names}}'], stdout=subprocess.PIPE)
+        containers_source = subprocess.Popen(["docker", "ps", "-a", "--format", r'{{.ID}}\t{{.Image}}\t{{.Size}}\t{{.Names}}\t'], stdout=subprocess.PIPE)
         for line in containers_source.stdout:
             splitline = line.split("\t")
             for prefix in self.white_list:
@@ -98,7 +98,7 @@ class DockerCleaner(LoggerMixin):
         containers.sort(key=lambda x:x[0], reverse=True)
 
         if containers.count > 0 and containers[0][0] > 1024**3:
-            self.logger.warning("Kill container {0} due to disk pressure. Container size: {1}".format(containers[0][1], containers[0][0]))
+            self.logger.warning("Kill container {0} due to disk pressure. Container size: {1}".format(containers[0][3], containers[0][4]))
             
             # Write error log
             container_name = re.search(r"container(_\w+)?_\d+_\d+_\d+_\d+$", containers[0][3]).group()
@@ -106,7 +106,7 @@ class DockerCleaner(LoggerMixin):
             full_path = "/logs/{0}/{1}".format(application_name, container_name)
 
             if not os.path.isdir(full_path):
-                self.logger.error("Cannot find job log dir, create path. Log may not be collected.")
+                self.logger.error("Cannot find job log dir, creating path. Log may not be collected.")
                 try:
                     os.makedirs(full_path)
                 except OSError as exc:
@@ -117,14 +117,15 @@ class DockerCleaner(LoggerMixin):
                 timestamp = int(time.time())
                 try:
                     fp = open(error_filename, "w")
+                except IOError:
+                    self.logger.error("Failed to write error log, skipped")
+                else:
                     fp.writelines([
                         "{0} ERROR ACTION \"kill\"\n".format(timestamp),
-                        "{0} ERROR REASON \"Container {1} killed due to disk pressure. Disk size: {2}, Used: {3}, Cleaner threshold: {4}, Container cost: {5} \"\n".format(timestamp, container_name, size, "{0}({1}%)".format(used, usep), self.__threshold + "%", containers[0][4]),
+                        "{0} ERROR REASON \"Container {1} killed due to disk pressure. Disk size: {2}, Used: {3}, Cleaner threshold: {4}, Container cost: {5} \"\n".format(timestamp, container_name, size, "{0}({1}%)".format(used, usep), "{0}%".format(self.__threshold), containers[0][4]),
                         "{0} ERROR SOLUTOIN \"Node disk is full, please try another time. If your job needs large space, please use NAS to store data.\"\n".format(timestamp)
                         ])
                     fp.close()
-                except:
-                    self.logger.error("Failed to write error log, skipped")
 
             subprocess.Popen(["docker", "kill", "--signal=10", containers[0][1]])
 
