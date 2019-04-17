@@ -72,15 +72,15 @@ class DockerCleaner(LoggerMixin):
 
 
     def check_and_clean(self):
-        size, used, usedp = self.check_disk_usage("/") 
+        size, used, usep = self.check_disk_usage("/") 
         if usep >= self.__threshold:
             self.logger.info("Disk usage is above {0}%, Try to remove containers".format(self.__threshold))
-            self.kill_largest_container(size, used, usedp)
+            self.kill_largest_container(size, used, usep)
 
 
     # Clean logic v1: kill largest container
     white_list = ["k8s_POD", "k8s_kube", "k8s_pylon", "k8s_zookeeper", "k8s_rest-server", "k8s_yarn", "k8s_hadoop", "k8s_job-exporter", "k8s_watchdog", "k8s_grafana", "k8s_node-exporter", "k8s_webportal", "k8s_prometheus", "k8s_nvidia-drivers", "k8s_etcd-container", "k8s_apiserver-container", "k8s_docker-cleaner", "kubelet", "dev-box"]
-    def kill_largest_container(self, size, used, usedp):
+    def kill_largest_container(self, size, used, usep):
         containers = []
         # Only try to stop PAI jobs and user created containers
         containers_source = subprocess.Popen(["docker", "ps", "-a", "--format", r'{{.ID}}\t{{.Image}}\t{{.Size}}\t{{.Names}}'], stdout=subprocess.PIPE)
