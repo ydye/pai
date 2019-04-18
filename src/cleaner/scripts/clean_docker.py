@@ -55,12 +55,12 @@ class DockerCleaner(LoggerMixin):
 
     def check_disk_usage(self, partition):
         df = subprocess.Popen(["df","-h", partition], stdout=subprocess.PIPE)
-        size = 0
+        sized = 0
         try:
             for line in df.stdout:
                 splitline = line.decode().split()
                 if splitline[5] == partition:
-                    size = splitline[1]
+                    sized = splitline[1]
                     used = splitline[2]
                     usep = int(splitline[4][:-1])
         except ValueError:
