@@ -65,23 +65,23 @@ class DockerCleaner(LoggerMixin):
                     usep = int(splitline[4][:-1])
         except ValueError:
             self.logger.error("cannot get disk size, reset size to 0")
-            size = 0
+            sized = 0
             used = 0
             usep = 0
         self.logger.info("Checking disk, disk usage = {0}%".format(usep))
-        return size, used, usep
+        return sized, used, usep
 
 
     def check_and_clean(self):
-        size, used, usep = self.check_disk_usage("/") 
+        sized, used, usep = self.check_disk_usage("/") 
         if usep >= self.__threshold:
             self.logger.info("Disk usage is above {0}%, Try to remove containers".format(self.__threshold))
-            self.kill_largest_container(size, used, usep)
+            self.kill_largest_container(sized, used, usep)
 
 
     # Clean logic v1: kill largest container
     white_list = ["k8s_POD", "k8s_kube", "k8s_pylon", "k8s_zookeeper", "k8s_rest-server", "k8s_yarn", "k8s_hadoop", "k8s_job-exporter", "k8s_watchdog", "k8s_grafana", "k8s_node-exporter", "k8s_webportal", "k8s_prometheus", "k8s_nvidia-drivers", "k8s_etcd-container", "k8s_apiserver-container", "k8s_docker-cleaner", "kubelet", "dev-box"]
-    def kill_largest_container(self, size, used, usep):
+    def kill_largest_container(self, sized, used, usep):
         containers = []
         # Only try to stop PAI jobs and user created containers
         containers_source = subprocess.Popen(["docker", "ps", "-a", "--format", r'{{.ID}}\t{{.Image}}\t{{.Size}}\t{{.Names}}\t'], stdout=subprocess.PIPE)
@@ -122,7 +122,7 @@ class DockerCleaner(LoggerMixin):
                 else:
                     fp.writelines([
                         "{0} ERROR ACTION \"kill\"\n".format(timestamp),
-                        "{0} ERROR REASON \"Container {1} killed due to disk pressure. Disk size: {2}, Used: {3}, Cleaner threshold: {4}, Container cost: {5} \"\n".format(timestamp, container_name, size, "{0}({1}%)".format(used, usep), "{0}%".format(self.__threshold), containers[0][4]),
+                        "{0} ERROR REASON \"{1} killed due to disk pressure. Disk size: {2}, Used: {3}, Cleaner threshold: {4}, Container cost: {5} \"\n".format(timestamp, container_name, sized, "{0}({1}%)".format(used, usep), "{0}%".format(self.__threshold), containers[0][4]),
                         "{0} ERROR SOLUTOIN \"Node disk is full, please try another time. If your job needs large space, please use NAS to store data.\"\n".format(timestamp)
                         ])
                     fp.close()
