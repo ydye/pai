@@ -20,17 +20,17 @@ import 'regenerator-runtime/runtime';
 import 'whatwg-fetch';
 
 import classNames from 'classnames';
-import {isEmpty} from 'lodash';
+import {get, isEmpty} from 'lodash';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {initializeIcons} from '@uifabric/icons';
 import {FontClassNames} from '@uifabric/styling';
 
-import t from './tachyons.css';
+import t from '../../../components/tachyons.scss';
 
 import Top from './job-detail/components/top';
 import Summary from './job-detail/components/summary';
-import {SpinnerLoading} from './job-detail/components/loading';
+import {SpinnerLoading} from '../../../components/loading';
 import TaskRole from './job-detail/components/task-role';
 import {fetchJobConfig, fetchJobInfo, fetchSshInfo, stopJob, NotFoundError} from './job-detail/conn';
 import {getHumanizedJobStateString, getTaskConfig, isJobV2} from './job-detail/util';
@@ -94,6 +94,7 @@ class JobDetail extends React.Component {
   renderTaskRoles() {
     const {jobConfig, jobInfo, sshInfo} = this.state;
     if (!isEmpty(jobInfo.taskRoles)) {
+      const failedTaskRole = getHumanizedJobStateString(jobInfo) === 'Failed' && get(jobInfo, 'jobStatus.appExitTriggerTaskRoleName');
       return Object.keys(jobInfo.taskRoles).map((key) => (
         <TaskRole
           key={key}
@@ -102,6 +103,7 @@ class JobDetail extends React.Component {
           jobStatus={getHumanizedJobStateString(jobInfo)}
           sshInfo={sshInfo}
           taskConfig={getTaskConfig(jobConfig, key)}
+          isFailed={failedTaskRole && key === failedTaskRole}
         />
       ));
     } else if (jobConfig && jobConfig.taskRoles) {
