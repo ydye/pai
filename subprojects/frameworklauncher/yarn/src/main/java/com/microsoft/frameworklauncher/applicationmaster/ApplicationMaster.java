@@ -54,6 +54,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.log4j.Level;
 
+import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -329,7 +330,8 @@ public class ApplicationMaster extends AbstractService {
     Priority requestPriority = statusManager.getNextContainerRequestPriority();
     String requestNodeLabel = requestManager.getTaskRolePlatParams(taskRoleName).getTaskNodeLabel();
     ExecutionTypeRequest requestExecutionType = ExecutionTypeRequest.newInstance(ExecutionType.GUARANTEED);
-    if (requestManager.getTaskRolePlatParams(taskRoleName).getTaskNodeGpuType().equals("oppor")){
+    if (requestManager.getTaskRolePlatParams(taskRoleName).getTaskNodeGpuType() != null
+            && requestManager.getTaskRolePlatParams(taskRoleName).getTaskNodeGpuType().equals("oppor")){
       requestExecutionType = ExecutionTypeRequest.newInstance(ExecutionType.OPPORTUNISTIC);
     }
 
