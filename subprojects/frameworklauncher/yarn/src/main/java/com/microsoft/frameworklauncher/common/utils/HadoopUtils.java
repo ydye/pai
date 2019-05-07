@@ -283,13 +283,13 @@ public class HadoopUtils {
    * So here, the hostName will override the nodeLabel since it is generally more specific.
    */
   public static ContainerRequest toContainerRequest(
-      ResourceDescriptor resource, Priority priority, String nodeLabel, String hostName) throws Exception {
+      ResourceDescriptor resource, Priority priority, String nodeLabel, String hostName, ExecutionTypeRequest execType) throws Exception {
     if (hostName != null && !ResourceRequest.isAnyLocation(hostName)) {
       return new ContainerRequest(
-          resource.toResource(), new String[]{hostName}, new String[]{}, priority, false, null);
+          resource.toResource(), new String[]{hostName}, new String[]{}, priority, 0L,false, null, execType);
     } else {
       return new ContainerRequest(
-          resource.toResource(), new String[]{}, new String[]{}, priority, true, nodeLabel);
+          resource.toResource(), new String[]{}, new String[]{}, priority, 0L,true, nodeLabel, execType);
     }
   }
 

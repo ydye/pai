@@ -45,6 +45,7 @@ import com.microsoft.frameworklauncher.zookeeperstore.ZookeeperStore;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.*;
+import org.apache.hadoop.yarn.api.records.ExecutionType;
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
@@ -327,6 +328,10 @@ public class ApplicationMaster extends AbstractService {
     String taskRoleName = taskStatus.getTaskRoleName();
     Priority requestPriority = statusManager.getNextContainerRequestPriority();
     String requestNodeLabel = requestManager.getTaskRolePlatParams(taskRoleName).getTaskNodeLabel();
+    ExecutionTypeRequest requestExecutionType = ExecutionTypeRequest.newInstance(ExecutionType.GUARANTEED);
+    if (requestManager.getTaskRolePlatParams(taskRoleName).getTaskNodeGpuType().equals("oppor")){
+      requestExecutionType = ExecutionTypeRequest.newInstance(ExecutionType.OPPORTUNISTIC);
+    }
 
     ResourceDescriptor requestResource = requestManager.getTaskResource(taskRoleName);
     ResourceDescriptor maxResource = conf.getMaxResource();
@@ -344,11 +349,11 @@ public class ApplicationMaster extends AbstractService {
 
       ResourceDescriptor optimizedRequestResource = selectionResult.getOptimizedResource();
       if (selectionResult.getNodeHosts().size() > 0) {
-        return HadoopUtils.toContainerRequest(optimizedRequestResource, requestPriority, null, selectionResult.getNodeHosts().get(0));
+        return HadoopUtils.toContainerRequest(optimizedRequestResource, requestPriority, null, selectionResult.getNodeHosts().get(0), requestExecutionType);
       }
-      return HadoopUtils.toContainerRequest(optimizedRequestResource, requestPriority, requestNodeLabel, null);
+      return HadoopUtils.toContainerRequest(optimizedRequestResource, requestPriority, requestNodeLabel, null, requestExecutionType);
     }
-    return HadoopUtils.toContainerRequest(requestResource, requestPriority, requestNodeLabel, null);
+    return HadoopUtils.toContainerRequest(requestResource, requestPriority, requestNodeLabel, null, requestExecutionType);
   }
 
   private String generateContainerLocations(TaskStatus taskStatus, String linePrefix) {
