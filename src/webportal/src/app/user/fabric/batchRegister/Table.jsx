@@ -18,6 +18,10 @@
 import React, {useContext} from 'react';
 import {DetailsList, SelectionMode, FontClassNames, TooltipHost, TextField, Dropdown, DefaultButton} from 'office-ui-fabric-react';
 
+import c from 'classnames';
+import t from '../../../components/tachyons.scss';
+import styled from 'styled-components';
+
 import {StatusBadge} from '../../../components/status-badge';
 
 import TableTextField from './TableTextField';
@@ -92,6 +96,14 @@ export default function Table() {
     },
   };
 
+  const DropdownDisabledDiv = styled.div`
+    background-color: #ffffff;
+    border: 1px solid #a6a6a6;
+    margin-left: -12px;
+    margin-right: -32px;
+    padding-left: 12px;
+  `;
+
   /**
    * @type {import('office-ui-fabric-react').IColumn}
    */
@@ -113,8 +125,6 @@ export default function Table() {
       ];
       const {admin} = userInfo;
       const finished = isFinished(userInfo);
-      /** @type {import('@uifabric/styling').IStyle} */
-      const disableStyle = {backgroundColor: '#ffffff', border: '1px solid #a6a6a6', marginLeft: -12, marginRight: -32, paddingLeft: 12};
       return (
         <Dropdown
           options={options}
@@ -124,12 +134,12 @@ export default function Table() {
             userInfo.admin = option.key;
           }}
           onRenderTitle={(options) => {
-            const fixStyle = finished ? disableStyle : null;
+            const FixedDiv = finished ? DropdownDisabledDiv : styled.div``;
             const [{text}] = options;
             return (
-              <div style={fixStyle}>
-                <span style={{color: '#000000'}}>{text}</span>
-              </div>
+              <FixedDiv>
+                <span className={t.black}>{text}</span>
+              </FixedDiv>
             );
           }}
         />
@@ -166,13 +176,13 @@ export default function Table() {
         const displayVCs = parseVirtualClusterString(virtualClusterString);
         let displayText;
         if (displayVCs.length == 0) {
-          displayText = <span style={{color: '#000000', height: '100%'}}>&nbsp;</span>;
+          displayText = <span className={c([t.black, t.h100])}>&nbsp;</span>;
         } else {
           let innerText = displayVCs[0];
           if (displayVCs.length > 1) {
             innerText = innerText + ` (+${displayVCs.length - 1})`;
           }
-          displayText = <span style={{color: '#000000', height: '100%'}}>{innerText}</span>;
+          displayText = <span className={c([t.black, t.h100])}>{innerText}</span>;
         }
         return displayText;
       };
@@ -187,8 +197,6 @@ export default function Table() {
       });
       const finished = isFinished(userInfo);
       if (finished) {
-        /** @type {import('@uifabric/styling').IStyle} */
-        const disableStyle = {backgroundColor: '#ffffff', border: '1px solid #a6a6a6', marginLeft: -12, marginRight: -32, paddingLeft: 12};
         return (
           <Dropdown
             disabled
@@ -196,9 +204,9 @@ export default function Table() {
             defaultSelectedKey={options[0].key}
             onRenderTitle={(_options) => {
               return (
-                <div style={disableStyle}>
+                <DropdownDisabledDiv>
                   {getDisplayVirtualClusterString(userInfo['virtual cluster'])}
-                </div>
+                </DropdownDisabledDiv>
               );
             }}
           />
@@ -304,10 +312,8 @@ export default function Table() {
         event.stopPropagation();
         removeRow(userInfo);
       }
-      /** @type {React.CSSProperties} */
-      const wrapperStyle = {display: 'inline-block', verticalAlign: 'middle', width: '80%'};
       return (
-        <div style={wrapperStyle}>
+        <div className={c([t.dib, t.vMid, t.w80])}>
           <DefaultButton
             onClick={onClick}
           >

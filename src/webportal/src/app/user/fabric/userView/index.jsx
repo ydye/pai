@@ -33,7 +33,7 @@ import Ordering from './Ordering';
 import Filter from './Filter';
 import Pagination from './Pagination';
 import Paginator from './Paginator';
-import {getAllUsersRequest, removeUserRequest, updateUserVcRequest, updateUserAccountRequest, updateUserGithubPATRequest} from '../conn';
+import {getAllUsersRequest, removeUserRequest, updateUserVcRequest, updateUserRequest, updateUserGithubPATRequest} from '../conn';
 
 const userEditModalComponent = require('./user-edit-modal-component.ejs');
 require('./user-edit-modal-component.scss');
@@ -205,7 +205,7 @@ export default function UserView() {
   const updateUserAccount = (username) => {
     const password = $('#form-update-account :input[name=password]').val();
     const admin = $('#form-update-account :input[name=admin]').is(':checked') ? true : false;
-    updateUserAccountRequest(username, password, admin)
+    updateUserRequest(username, password, admin)
       .then(updateUserInfoCallback)
       .catch((err) => {
         $('#form-update-account').trigger('reset');

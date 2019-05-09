@@ -17,8 +17,7 @@
 
 import React, {useContext} from 'react';
 
-import {DefaultButton, PrimaryButton} from 'office-ui-fabric-react/lib/Button';
-import {CommandBar} from 'office-ui-fabric-react/lib/CommandBar';
+import {DefaultButton, PrimaryButton, CommandBar} from 'office-ui-fabric-react';
 
 import Context from './Context';
 
