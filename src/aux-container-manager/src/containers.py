@@ -36,7 +36,9 @@ class PaiContainer(object):
     def is_job_container(self):
         return self.username != "" and self.jobname != "" and self.yarn_container != ""
 
-    def kill(self, kill_reason="Container killed to reclaim resource for guaranteed job"):
+    def stop(self, kill_reason="Container killed to reclaim resource"):
+        if os.path.exists(self.full_err_file) or os.path.exists(self.full_err_file+".tmp"):
+            return
         timestamp = int(time.time())
         with open(self.full_err_file+".tmp", "w") as f:
             f.writelines([
@@ -61,24 +63,10 @@ class DockerOp(object):
         wrapper = [PaiContainer(container) for container in container_list]
         return wrapper
 
-
-    def get_container_list(self, container_type="all"):
-        if container_type == "all":
-            return self.get_all_containers()
-        elif container_type == "guaranteed":
-            return self.get_guarantee_containers()
-        elif container_type == "opportunistic":
-            return self.get_opportunistic_containers()
-        else:
-            logger.warning("Unknown container type: {}".format(container_type))
-            return []
-
-
     def get_guarantee_containers(self):
         containers = [container for container in self._list()
                       if container.is_job_container() and container.priority == "guaranteed"]
         return containers
-
 
     def get_opportunistic_containers(self):
         containers = [container for container in self._list()
