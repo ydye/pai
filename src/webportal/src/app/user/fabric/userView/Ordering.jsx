@@ -15,11 +15,9 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import {getVirtualCluster} from './utils';
-
 export default class Ordering {
   /**
-   * @param {"username" | "admin" | "virtualCluster"} field
+   * @param {"username" | "email" | "admin"} field
    * @param {boolean | undefined} descending
    */
   constructor(field, descending = false) {
@@ -32,16 +30,9 @@ export default class Ordering {
     if (field == null) {
       return users;
     }
-    let comparator;
-    if (field === 'virtualCluster') {
-      comparator = descending
-        ? (a, b) => String(getVirtualCluster(b)).localeCompare(getVirtualCluster(a))
-        : (a, b) => String(getVirtualCluster(a)).localeCompare(getVirtualCluster(b));
-    } else {
-      comparator = descending
-        ? (a, b) => (String(b[field]).localeCompare(a[field]))
-        : (a, b) => (String(a[field]).localeCompare(b[field]));
-    }
+    const comparator = descending
+      ? (a, b) => (String(b[field]).localeCompare(String(a[field])))
+      : (a, b) => (String(a[field]).localeCompare(String(b[field])));
     return users.slice().sort(comparator);
   }
 }

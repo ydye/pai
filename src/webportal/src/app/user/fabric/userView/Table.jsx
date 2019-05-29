@@ -22,8 +22,6 @@ import {ShimmeredDetailsList, Selection, FontClassNames, ColumnActionsMode, Defa
 import c from 'classnames';
 import t from '../../../components/tachyons.scss';
 
-import {toBool, getVirtualCluster} from './utils';
-
 import Context from './Context';
 import Ordering from './Ordering';
 
@@ -85,29 +83,39 @@ export default function Table() {
 
   const adminColumn = applySortProps({
     key: 'admin',
-    minWidth: 150,
+    minWidth: 60,
     name: 'Admin',
     className: FontClassNames.mediumPlus,
     headerClassName: FontClassNames.medium,
     isResizable: true,
     isFiltered: filter.admins.size > 0,
     onRender(user) {
-      return toBool(user.admin) ? 'Yes' : 'No';
+      return user.admin ? 'Yes' : 'No';
     },
   });
 
-  const virtualClusterColumn = applySortProps({
-    key: 'virtualCluster',
-    minWidth: 300,
-    name: 'Virtual Cluster',
+  const emailColumn = applySortProps({
+    key: 'email',
+    minWidth: 200,
+    fieldName: 'email',
+    name: 'Email',
     className: FontClassNames.mediumPlus,
     headerClassName: FontClassNames.medium,
     isResizable: true,
-    isFiltered: filter.virtualClusters.size > 0,
-    onRender(user) {
-      return getVirtualCluster(user);
-    },
   });
+
+  const grouplistColumn = {
+    key: 'grouplist',
+    minWidth: 250,
+    name: 'Groups',
+    className: FontClassNames.mediumPlus,
+    headerClassName: FontClassNames.medium,
+    isResizable: true,
+    isFiltered: filter.groups.size > 0,
+    onRender(user) {
+      return user.grouplist.slice().sort().join(', ');
+    },
+  };
 
   /**
    * @type {import('office-ui-fabric-react').IColumn}
@@ -143,7 +151,8 @@ export default function Table() {
   const columns = [
     usernameColumn,
     adminColumn,
-    virtualClusterColumn,
+    emailColumn,
+    grouplistColumn,
     actionsColumn,
   ];
 

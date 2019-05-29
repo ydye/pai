@@ -16,60 +16,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import React, {useRef, useContext, useState, useEffect} from 'react';
-import {Modal, TextField, FontClassNames, PrimaryButton, DefaultButton, Stack, StackItem, Checkbox, Dropdown, mergeStyles, getTheme} from 'office-ui-fabric-react';
+import {Modal, TextField, FontClassNames, PrimaryButton, DefaultButton, Stack, StackItem, Dropdown, mergeStyles, getTheme} from 'office-ui-fabric-react';
 import PropTypes from 'prop-types';
 import {isEmpty} from 'lodash';
 import c from 'classnames';
 import t from '../../../components/tachyons.scss';
 
-import {createUserRequest, updateUserRequest, updateUserVcRequest} from '../conn';
-import {checkUsername, checkPassword} from '../utils';
+import {createUserRequest, updateUserPasswordRequest, updateGrouplistRequest} from '../conn';
+import {checkUsername, checkPassword, checkEmail} from '../utils';
 
-import {toBool} from './utils';
 import Context from './Context';
 
-export default function UserEditor({user: {username = '', admin = '', virtualCluster = ''}, isOpen = false, isCreate = true, hide}) {
-  const {allVCs, showMessageBox, refreshAllUsers} = useContext(Context);
+export default function UserEditor({user: {username = '', email = '', grouplist = []}, isOpen = false, isCreate = true, hide}) {
+  const {allGroups, showMessageBox, refreshAllUsers} = useContext(Context);
 
   const usernameRef = useRef(null);
   const passwordRef = useRef(null);
-  const adminRef = useRef(null);
+  const emailRef = useRef(null);
 
-  const oldAdmin = toBool(admin);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [groups, setGroups] = useState([]);
   useEffect(() => {
-    setIsAdmin(oldAdmin);
+    setGroups(grouplist.slice());
   }, []);
 
-  const handleAdminChanged = (_event, checked) => {
-    setIsAdmin(checked);
-  };
-
-  const parseVirtualClusterString = (virtualClusterString) => {
-    let vcs = [];
-    if (virtualClusterString) {
-      virtualClusterString.split(',').map((vc) => vc.trim()).forEach((vc) => {
-        if (vc) {
-          if (allVCs.indexOf(vc) != -1) {
-            vcs.push(vc);
-          }
-        }
-      });
-    }
-    return vcs.sort();
-  };
-  const [newVCs, setNewVCs] = useState([]);
-  useEffect(() => {
-    setNewVCs(parseVirtualClusterString(virtualCluster));
-  }, []);
-
-  const handleVCsChanged = (_event, option, _index) => {
+  const handleGroupsChanged = (_event, option, _index) => {
     if (option.selected) {
-      newVCs.push(option.text);
+      groups.push(option.text);
     } else {
-      newVCs.splice(newVCs.indexOf(option.text), 1);
+      groups.splice(groups.indexOf(option.text), 1);
     }
-    setNewVCs(newVCs.slice());
+    setGroups(groups.slice());
   };
 
   const [lock, setLock] = useState(false);
@@ -81,7 +57,7 @@ export default function UserEditor({user: {username = '', admin = '', virtualClu
 
     const newUsername = usernameRef.current.value;
     const newPassword = passwordRef.current.value;
-    const newAdmin = adminRef.current.checked;
+    const newEmail = emailRef.current.value;
 
     if (isCreate) {
       const errorMessage = checkUsername(newUsername);
@@ -101,25 +77,17 @@ export default function UserEditor({user: {username = '', admin = '', virtualClu
       }
     }
 
-    const request = isCreate ? createUserRequest : updateUserRequest;
-    const result = await request(newUsername, newPassword, newAdmin)
-      .then(() => {
-        setNeedRefreshAllUsers(true);
-        return {success: true};
-      })
-      .catch((err) => {
-        return {success: false, message: String(err)};
-      });
-    if (!result.success) {
-      await showMessageBox(result.message);
-      setLock(false);
-      return;
+    {
+      const errorMessage = checkEmail(newEmail);
+      if (errorMessage) {
+        await showMessageBox(errorMessage);
+        setLock(false);
+        return;
+      }
     }
 
-    // Admin user VC update will be executed in rest-server
-    if (!newAdmin) {
-      const newVirtualCluster = newVCs.sort().join(',');
-      const result = await updateUserVcRequest(newUsername, newVirtualCluster)
+    if (isCreate) {
+      const result = await createUserRequest(newUsername, newEmail, newPassword, groups)
         .then(() => {
           setNeedRefreshAllUsers(true);
           return {success: true};
@@ -131,6 +99,38 @@ export default function UserEditor({user: {username = '', admin = '', virtualClu
         await showMessageBox(result.message);
         setLock(false);
         return;
+      }
+    } else {
+      if (newPassword) {
+        const result = await updateUserPasswordRequest(newUsername, newPassword)
+          .then(() => {
+            setNeedRefreshAllUsers(true);
+            return {success: true};
+          })
+          .catch((err) => {
+            return {success: false, message: String(err)};
+          });
+        if (!result.success) {
+          await showMessageBox(result.message);
+          setLock(false);
+          return;
+        }
+      }
+
+      {
+        const result = await updateGrouplistRequest(newUsername, groups)
+          .then(() => {
+            setNeedRefreshAllUsers(true);
+            return {success: true};
+          })
+          .catch((err) => {
+            return {success: false, message: String(err)};
+          });
+        if (!result.success) {
+          await showMessageBox(result.message);
+          setLock(false);
+          return;
+        }
       }
     }
 
@@ -153,8 +153,8 @@ export default function UserEditor({user: {username = '', admin = '', virtualClu
   /**
    * @type {import('office-ui-fabric-react').IDropdownOption[]}
    */
-  const vcsOptions = allVCs.map((vc) => {
-    return {key: vc, text: vc};
+  const groupsOptions = allGroups.map((group) => {
+    return {key: group, text: group};
   });
 
   const {spacing} = getTheme();
@@ -163,7 +163,7 @@ export default function UserEditor({user: {username = '', admin = '', virtualClu
     <Modal
       isOpen={isOpen}
       isBlocking={true}
-      containerClassName={mergeStyles({maxWidth: '430px'}, t.w90)}
+      containerClassName={mergeStyles({width: '450px', minWidth: '450px'})}
     >
       <div className={c(t.pa4)}>
         <form onSubmit={handleSubmit}>
@@ -177,7 +177,7 @@ export default function UserEditor({user: {username = '', admin = '', virtualClu
                   <td className={tdLabelStyle}>
                     Name
                 </td>
-                  <td className={tdPaddingStyle} style={{width: '270px'}}>
+                  <td className={tdPaddingStyle} style={{minWidth: '280px'}}>
                     <TextField
                       componentRef={usernameRef}
                       disabled={!isCreate}
@@ -200,38 +200,28 @@ export default function UserEditor({user: {username = '', admin = '', virtualClu
                 </tr>
                 <tr>
                   <td className={tdLabelStyle}>
-                    Virtual clusters
+                    Email
                   </td>
                   <td className={tdPaddingStyle}>
-                    <Dropdown
-                      multiSelect
-                      options={vcsOptions}
-                      selectedKeys={newVCs}
-                      disabled={isAdmin ? true : false}
-                      onChange={handleVCsChanged}
-                      placeholder='Select an option'
+                    <TextField
+                      componentRef={emailRef}
+                      defaultValue={email}
+                      placeholder='Enter email'
                     />
                   </td>
                 </tr>
                 <tr>
                   <td className={tdLabelStyle}>
-                    Admin user
+                    Groups
                   </td>
                   <td className={tdPaddingStyle}>
-                    <Stack horizontal={true} gap={spacing.m}>
-                      <StackItem>
-                        <Checkbox
-                          componentRef={adminRef}
-                          defaultChecked={oldAdmin}
-                          onChange={handleAdminChanged}
-                        />
-                      </StackItem>
-                      <StackItem>
-                        <span className={c(FontClassNames.xSmall, t.i)}>
-                          Admin user default own all virtual clusters
-                        </span>
-                      </StackItem>
-                    </Stack>
+                    <Dropdown
+                      multiSelect
+                      options={groupsOptions}
+                      selectedKeys={groups}
+                      onChange={handleGroupsChanged}
+                      placeholder='Select an option'
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -260,8 +250,8 @@ export default function UserEditor({user: {username = '', admin = '', virtualClu
 UserEditor.propTypes = {
   user: PropTypes.shape({
     username: PropTypes.string,
-    admin: PropTypes.string,
-    virtualCluster: PropTypes.string,
+    email: PropTypes.string,
+    grouplist: PropTypes.array,
   }),
   isOpen: PropTypes.bool,
   isCreate: PropTypes.bool,

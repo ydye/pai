@@ -28,8 +28,8 @@ import TopBar from './TopBar';
 import Table from './Table';
 import BottomBar from './BottomBar';
 import MessageBox from '../components/MessageBox';
-import {toBool, isFinished} from './utils';
-import {getAllUsersRequest, getAllVcsRequest, createUserRequest, updateUserVcRequest} from '../conn';
+import {isFinished} from './utils';
+import {getAllUsersRequest, getAllGrouplist, createUserRequest} from '../conn';
 
 import {MaskSpinnerLoading} from '../../../components/loading';
 import {initTheme} from '../../../components/theme';
@@ -39,9 +39,9 @@ import {checkAdmin} from '../../user-auth/user-auth.component';
 const csvParser = require('papaparse');
 const stripBom = require('strip-bom-string');
 const columnUsername = 'username';
+const columnEmail = 'email';
 const columnPassword = 'password';
-const columnAdmin = 'admin';
-const columnVC = 'virtual cluster';
+const columnGrouplist = 'grouplist';
 
 initTheme();
 initializeIcons();
@@ -49,15 +49,15 @@ initializeIcons();
 export default function BatchRegister() {
   const [userInfos, setUserInfos] = useState([]);
   const [loading, setLoading] = useState({'show': false, 'text': ''});
-  const [virtualClusters, setVirtualClusters] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
 
-  const refreshAllVcs = () => {
-    getAllVcsRequest().then((data) => {
-      setVirtualClusters(Object.keys(data).sort());
+  const [allGroups, setAllGroups] = useState([]);
+  const refreshAllGroups = () => {
+    getAllGrouplist().then((data) => {
+      setAllGroups(data.map((group) => group.groupname).sort());
     });
   };
-  useEffect(refreshAllVcs, []);
+  useEffect(refreshAllGroups, []);
 
   const refreshAllUsers = () => {
     getAllUsersRequest().then((data) => {
@@ -69,9 +69,9 @@ export default function BatchRegister() {
   const downloadTemplate = () => {
     let csvString = csvParser.unparse([{
       [columnUsername]: 'student1',
+      [columnEmail]: 'student1@outlook.com',
       [columnPassword]: '111111',
-      [columnAdmin]: false,
-      [columnVC]: 'default',
+      [columnGrouplist]: 'default,group1,group2',
     }]);
     let universalBOM = '\uFEFF';
     let filename = 'userinfo.csv';
@@ -113,21 +113,23 @@ export default function BatchRegister() {
     return true;
   };
 
-  const checkVCField = (csvResult) => {
+  const checkGrouplistField = (csvResult) => {
     for (let i = 0; i < csvResult.data.length; i++) {
       let user = csvResult.data[i];
-      if (user[columnVC]) {
-        const parsedVCs = user[columnVC].split(',').map((vc) => vc.trim());
-        for (let j = 0; j < parsedVCs.length; j++) {
-          let vc = parsedVCs[j];
-          if (vc) {
-            if (virtualClusters.indexOf(vc) == -1) {
-              showMessageBox(`${vc} is not a valid virtual cluster name`);
+      if (user[columnGrouplist]) {
+        const parsedGroups = user[columnGrouplist].split(',').map((group) => group.trim());
+        for (let j = 0; j < parsedGroups.length; j++) {
+          let group = parsedGroups[j];
+          if (group) {
+            if (allGroups.indexOf(group) == -1) {
+              showMessageBox(`${group} is not a valid group name`);
               return false;
             }
           }
         }
-        user[columnVC] = parsedVCs.join(',');
+        user.groups = parsedGroups;
+      } else {
+        user.groups = [];
       }
     }
     return true;
@@ -147,7 +149,7 @@ export default function BatchRegister() {
       hideLoading();
       return;
     }
-    if (!checkVCField(csvResult)) {
+    if (!checkGrouplistField(csvResult)) {
       hideLoading();
       return;
     }
@@ -200,8 +202,9 @@ export default function BatchRegister() {
 
       let result = await createUserRequest(
         userInfo[columnUsername],
+        userInfo[columnEmail],
         userInfo[columnPassword],
-        toBool(userInfo[columnAdmin])).then(() => {
+        userInfo.groups).then(() => {
           return successResult;
         }).catch((err) => {
           return {
@@ -209,32 +212,13 @@ export default function BatchRegister() {
             message: `User ${userInfo[columnUsername]} created failed: ${String(err)}`,
           };
         });
-      if (!result.isSuccess) {
-        userInfo.status = result;
-        setUserInfos(userInfos.slice());
-        continue;
-      }
-
-      // Admin user VC update will be executed in rest-server
-      if (!toBool(userInfo[columnAdmin]) && userInfo[columnVC]) {
-        result = await updateUserVcRequest(
-          userInfo[columnUsername],
-          userInfo[columnVC]).then(() => {
-            return successResult;
-          }).catch((err) => {
-            return {
-              isSuccess: true,
-              message: `User ${userInfo[columnUsername]} created successfully but failed when update virtual clusters: ${String(err)}`,
-            };
-          });
-      }
 
       userInfo.status = result;
       setUserInfos(userInfos.slice());
     }
 
     refreshAllUsers();
-    refreshAllVcs();
+    refreshAllGroups();
     hideLoading();
     setTimeout(() => {
       const finishedStatus = countBy(userInfos, 'status.isSuccess');
@@ -247,7 +231,7 @@ export default function BatchRegister() {
   };
 
   const addNew = () => {
-    userInfos.push({});
+    userInfos.push({groups: []});
     setUserInfos(userInfos.slice());
   };
 
@@ -263,7 +247,7 @@ export default function BatchRegister() {
     addNew,
     removeRow,
     userInfos,
-    virtualClusters,
+    allGroups,
     allUsers,
     submit,
   };

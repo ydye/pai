@@ -15,7 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import React, {useContext, useMemo, useState} from 'react';
+import React, {useContext, useState} from 'react';
 
 import {CommandBarButton, SearchBox, CommandBar, ContextualMenuItemType, ColorClassNames} from 'office-ui-fabric-react';
 import {PropTypes} from 'prop-types';
@@ -23,7 +23,6 @@ import {findIndex} from 'lodash';
 
 import Context from './Context';
 import Filter from './Filter';
-import {toBool} from './utils';
 
 function FilterButton({defaultRender: Button, ...props}) {
   const {subMenuProps: {items}} = props;
@@ -46,8 +45,8 @@ FilterButton.propTypes = {
 function KeywordSearchBox() {
   const {filter, setFilter} = useContext(Context);
   function onKeywordChange(keyword) {
-    const {admins, virtualClusters} = filter;
-    setFilter(new Filter(keyword, admins, virtualClusters));
+    const {admins, groups} = filter;
+    setFilter(new Filter(keyword, admins, groups));
   }
 
   return (
@@ -63,26 +62,7 @@ function KeywordSearchBox() {
 
 function TopBar() {
   const [active, setActive] = useState(true);
-  const {allUsers, refreshAllUsers, getSelectedUsers, filter, setFilter, addUser, importCSV, removeUsers, editUser, showBatchPasswordEditor, showBatchVirtualClustersEditor} = useContext(Context);
-
-  const {admins, virtualClusters} = useMemo(() => {
-    const admins = Object.create(null);
-    const virtualClusters = Object.create(null);
-
-    if (allUsers !== null) {
-      allUsers.forEach(function(user) {
-        admins[String(user.admin)] = true;
-        if (user.virtualCluster) {
-          const vcs = user.virtualCluster.split(',');
-          vcs.forEach((vc) => {
-            virtualClusters[vc] = true;
-          });
-        }
-      });
-    }
-
-    return {admins, virtualClusters};
-  }, [allUsers]);
+  const {allGroups, refreshAllUsers, getSelectedUsers, filter, setFilter, addUser, importCSV, removeUsers, editUser, showBatchPasswordEditor, showBatchGroupsEditor} = useContext(Context);
 
   const transparentStyles = {root: {background: 'transparent'}};
 
@@ -156,14 +136,14 @@ function TopBar() {
   /**
    * @type {import('office-ui-fabric-react').ICommandBarItemProps}
    */
-  const btnBatchEditVirtualClusters = {
-    key: 'BatchEditVirtualClusters',
-    name: 'Batch Edit Virtual Clusters',
+  const btnBatchEditGroups = {
+    key: 'BatchEditGroups',
+    name: 'Batch Edit Groups',
     buttonStyles: transparentStyles,
     iconProps: {
-      iconName: 'FullWidthEdit',
+      iconName: 'AddGroup',
     },
-    onClick: showBatchVirtualClustersEditor,
+    onClick: showBatchGroupsEditor,
   };
 
   /**
@@ -232,21 +212,21 @@ function TopBar() {
   /**
    * @returns {import('office-ui-fabric-react').ICommandBarItemProps}
    */
-  function getBtnAdmin() {
+  function getBtnFilterAdmin() {
     /**
      * @param {React.SyntheticEvent} event
      * @param {import('office-ui-fabric-react').IContextualMenuItem} item
      */
     function onClick(event, {key, checked}) {
       event.preventDefault();
-      const {keyword, virtualClusters} = filter;
+      const {keyword, groups} = filter;
       const admins = new Set(filter.admins);
       if (checked) {
         admins.delete(key);
       } else {
         admins.add(key);
       }
-      setFilter(new Filter(keyword, admins, virtualClusters));
+      setFilter(new Filter(keyword, admins, groups));
     }
 
     /**
@@ -254,8 +234,8 @@ function TopBar() {
      */
     function onClearClick(event) {
       event.preventDefault();
-      const {keyword, virtualClusters} = filter;
-      setFilter(new Filter(keyword, new Set(), virtualClusters));
+      const {keyword, groups} = filter;
+      setFilter(new Filter(keyword, new Set(), groups));
     }
 
     /**
@@ -266,7 +246,7 @@ function TopBar() {
     function getItem(key) {
       return {
         key,
-        text: toBool(key) ? 'Yes' : 'No',
+        text: key ? 'Yes' : 'No',
         canCheck: true,
         checked: filter.admins.has(key),
         onClick: onClick,
@@ -278,10 +258,10 @@ function TopBar() {
       text: 'Admin',
       buttonStyles: transparentStyles,
       iconProps: {
-        iconName: 'Clock',
+        iconName: 'Admin',
       },
       subMenuProps: {
-        items: Object.keys(admins).map(getItem).concat([{
+        items: [true, false].map(getItem).concat([{
           key: 'divider',
           itemType: ContextualMenuItemType.Divider,
         },
@@ -299,7 +279,7 @@ function TopBar() {
   /**
    * @returns {import('office-ui-fabric-react').ICommandBarItemProps}
    */
-  function getBtnVirtualCluster() {
+  function getBtnFilterGroup() {
     /**
      * @param {React.SyntheticEvent} event
      * @param {import('office-ui-fabric-react').IContextualMenuItem} item
@@ -307,13 +287,13 @@ function TopBar() {
     function onClick(event, {key, checked}) {
       event.preventDefault();
       const {keyword, admins} = filter;
-      const virtualClusters = new Set(filter.virtualClusters);
+      const groups = new Set(filter.groups);
       if (checked) {
-        virtualClusters.delete(key);
+        groups.delete(key);
       } else {
-        virtualClusters.add(key);
+        groups.add(key);
       }
-      setFilter(new Filter(keyword, admins, virtualClusters));
+      setFilter(new Filter(keyword, admins, groups));
     }
 
     /**
@@ -335,20 +315,20 @@ function TopBar() {
         key,
         text: key,
         canCheck: true,
-        checked: filter.virtualClusters.has(key),
+        checked: filter.groups.has(key),
         onClick: onClick,
       };
     }
 
     return {
-      key: 'virtualCluster',
-      name: 'Virtual Cluster',
+      key: 'group',
+      name: 'Group',
       buttonStyles: transparentStyles,
       iconProps: {
-        iconName: 'CellPhone',
+        iconName: 'Group',
       },
       subMenuProps: {
-        items: Object.keys(virtualClusters).map(getItem).concat([{
+        items: allGroups.map(getItem).concat([{
           key: 'divider',
           itemType: ContextualMenuItemType.Divider,
         },
@@ -367,15 +347,15 @@ function TopBar() {
   const selectedUsers = getSelectedUsers();
   const selected = selectedUsers.length > 0;
   const selectedMulti = selectedUsers.length > 1;
-  const selectedAdmin = findIndex(selectedUsers, (user) => toBool(user.admin)) != -1;
+  const selectedAdmin = findIndex(selectedUsers, (user) => user.admin) != -1;
   if (selected) {
     if (selectedMulti) {
       if (selectedAdmin) {
         topBarItems.push(Object.assign(btnBatchEditPassword, {disabled: true}));
-        topBarItems.push(Object.assign(btnBatchEditVirtualClusters, {disabled: true}));
+        topBarItems.push(Object.assign(btnBatchEditGroups, {disabled: true}));
       } else {
         topBarItems.push(btnBatchEditPassword);
-        topBarItems.push(btnBatchEditVirtualClusters);
+        topBarItems.push(btnBatchEditGroups);
       }
     } else {
       topBarItems.push(btnEdit);
@@ -394,8 +374,8 @@ function TopBar() {
 
   const filterBarItems = [inputKeyword];
   const filterBarFarItems = [
-    getBtnVirtualCluster(),
-    getBtnAdmin(),
+    getBtnFilterGroup(),
+    getBtnFilterAdmin(),
     btnClear,
   ];
 

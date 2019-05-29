@@ -35,8 +35,8 @@ import Pagination from './Pagination';
 import Paginator from './Paginator';
 import UserEditor from './UserEditor';
 import BatchPasswordEditor from './BatchPasswordEditor';
-import BatchVirtualClustersEditor from './BatchVirtualClustersEditor';
-import {getAllUsersRequest, getAllVcsRequest, removeUserRequest} from '../conn';
+import BatchGroupsEditor from './BatchGroupsEditor';
+import {getAllUsersRequest, getAllGrouplist, removeUserRequest} from '../conn';
 
 initTheme();
 initializeIcons();
@@ -82,13 +82,13 @@ export default function UserView() {
   };
   useEffect(refreshAllUsers, []);
 
-  const [allVCs, setAllVCs] = useState([]);
-  const refreshAllVCs = () => {
-    getAllVcsRequest().then((data) => {
-      setAllVCs(Object.keys(data).sort());
+  const [allGroups, setAllGroups] = useState([]);
+  const refreshAllGroups = () => {
+    getAllGrouplist().then((data) => {
+      setAllGroups(data.map((group) => group.groupname).sort());
     });
   };
-  useEffect(refreshAllVCs, []);
+  useEffect(refreshAllGroups, []);
 
   const initialFilter = useMemo(() => {
     const filter = new Filter();
@@ -175,18 +175,18 @@ export default function UserView() {
     setBatchPasswordEditor({isOpen: false});
   };
 
-  const [batchVirtualClustersEditor, setBatchVirtualClustersEditor] = useState({isOpen: false, user: {}});
-  const showBatchVirtualClustersEditor = () => {
-    setBatchVirtualClustersEditor({isOpen: true});
+  const [batchGroupsEditor, setBatchGroupsEditor] = useState({isOpen: false, user: {}});
+  const showBatchGroupsEditor = () => {
+    setBatchGroupsEditor({isOpen: true});
   };
-  const hideBatchVirtualClustersEditor = () => {
-    setBatchVirtualClustersEditor({isOpen: false});
+  const hideBatchGroupsEditor = () => {
+    setBatchGroupsEditor({isOpen: false});
   };
 
   const context = {
     allUsers,
     refreshAllUsers,
-    allVCs,
+    allGroups,
     filteredUsers,
     ordering,
     setOrdering,
@@ -202,7 +202,7 @@ export default function UserView() {
     removeUsers,
     editUser,
     showBatchPasswordEditor,
-    showBatchVirtualClustersEditor,
+    showBatchGroupsEditor,
     showMessageBox,
   };
 
@@ -235,9 +235,9 @@ export default function UserView() {
         hide={hideBatchPasswordEditor}
       />
       }
-      {batchVirtualClustersEditor.isOpen && <BatchVirtualClustersEditor
-        isOpen={batchVirtualClustersEditor.isOpen}
-        hide={hideBatchVirtualClustersEditor}
+      {batchGroupsEditor.isOpen && <BatchGroupsEditor
+        isOpen={batchGroupsEditor.isOpen}
+        hide={hideBatchGroupsEditor}
       />
       }
       {loading.show && <MaskSpinnerLoading label={loading.text} />}

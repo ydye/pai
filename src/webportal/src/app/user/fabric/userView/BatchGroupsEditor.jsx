@@ -21,22 +21,22 @@ import PropTypes from 'prop-types';
 import c from 'classnames';
 import t from '../../../components/tachyons.scss';
 
-import {updateUserVcRequest} from '../conn';
+import {updateGrouplistRequest} from '../conn';
 
 import Context from './Context';
 
-export default function BatchVirtualClustersEditor({isOpen = false, hide}) {
-  const {allVCs, showMessageBox, refreshAllUsers, getSelectedUsers} = useContext(Context);
+export default function BatchGroupsEditor({isOpen = false, hide}) {
+  const {allGroups, showMessageBox, refreshAllUsers, getSelectedUsers} = useContext(Context);
 
-  const [virtualClusters, setVirtualClusters] = useState([]);
+  const [groups, setGroups] = useState([]);
 
-  const handleVCsChanged = (_event, option, _index) => {
+  const handleGroupsChanged = (_event, option, _index) => {
     if (option.selected) {
-      virtualClusters.push(option.text);
+      groups.push(option.text);
     } else {
-      virtualClusters.splice(virtualClusters.indexOf(option.text), 1);
+      groups.splice(groups.indexOf(option.text), 1);
     }
-    setVirtualClusters(virtualClusters.slice());
+    setGroups(groups.slice());
   };
 
   const [lock, setLock] = useState(false);
@@ -46,11 +46,10 @@ export default function BatchVirtualClustersEditor({isOpen = false, hide}) {
     event.preventDefault();
     setLock(true);
 
-    const virtualClustersString = virtualClusters.sort().join(',');
     const users = getSelectedUsers();
     for (let i = 0; i < users.length; i++) {
       const user = users[i];
-      const result = await updateUserVcRequest(user.username, virtualClustersString)
+      const result = await updateGrouplistRequest(user.username, groups)
         .then(() => {
           setNeedRefreshAllUsers(true);
           return {success: true};
@@ -64,7 +63,7 @@ export default function BatchVirtualClustersEditor({isOpen = false, hide}) {
         return;
       }
     }
-    await showMessageBox('Update vitrual clusters successfully');
+    await showMessageBox('Update groups successfully');
     setLock(false);
     hide();
     refreshAllUsers();
@@ -83,8 +82,8 @@ export default function BatchVirtualClustersEditor({isOpen = false, hide}) {
   /**
    * @type {import('office-ui-fabric-react').IDropdownOption[]}
    */
-  const vcsOptions = allVCs.map((vc) => {
-    return {key: vc, text: vc};
+  const groupsOptions = allGroups.map((group) => {
+    return {key: group, text: group};
   });
 
   const {spacing} = getTheme();
@@ -93,26 +92,26 @@ export default function BatchVirtualClustersEditor({isOpen = false, hide}) {
     <Modal
       isOpen={isOpen}
       isBlocking={true}
-      containerClassName={mergeStyles({maxWidth: '430px'}, t.w90)}
+      containerClassName={mergeStyles({width: '450px', minWidth: '450px'})}
     >
       <div className={c(t.pa4)}>
         <form onSubmit={handleSubmit}>
           <div className={c(FontClassNames.mediumPlus)}>
-            Batch Edit Virtual Clusters
+            Batch Edit Groups
           </div>
           <div style={{margin: `${spacing.l1} 0px`}}>
             <table className={c(t.mlAuto, t.mrAuto)}>
               <tbody>
                 <tr>
                   <td className={tdLabelStyle}>
-                    Virtual clusters
+                    Groups
                   </td>
-                  <td className={tdPaddingStyle} style={{width: '270px'}}>
+                  <td className={tdPaddingStyle} style={{minWidth: '280px'}}>
                     <Dropdown
                       multiSelect
-                      options={vcsOptions}
+                      options={groupsOptions}
                       placeholder='Select an option'
-                      onChange={handleVCsChanged}
+                      onChange={handleGroupsChanged}
                     />
                   </td>
                 </tr>
@@ -139,7 +138,7 @@ export default function BatchVirtualClustersEditor({isOpen = false, hide}) {
   );
 }
 
-BatchVirtualClustersEditor.propTypes = {
+BatchGroupsEditor.propTypes = {
   isOpen: PropTypes.bool,
   hide: PropTypes.func,
 };
