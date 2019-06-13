@@ -63,6 +63,8 @@ const requestTokenWithCode = async (req, res, next) => {
     req.IDToken = jwt.decode(response.data.id_token);
     req.accessToken = jwt.decode(response.data.access_token);
     req.refreshToken = jwt.decode(response.data.access_token);
+    // eslint-disable-next-line no-console
+    console.log(response.data);
     next();
   } catch (error) {
     return next(createError.unknown(error));
