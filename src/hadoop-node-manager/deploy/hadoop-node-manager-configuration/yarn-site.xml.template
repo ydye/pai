@@ -358,7 +358,7 @@ jobs are started with the DockerContainerExecutor.
 
   <property>
     <name>yarn.nodemanager.sleep-delay-before-sigkill.ms</name>
-    <value>65000</value>
+    <value>6500000</value>
   </property>
 
 </configuration>
