@@ -535,7 +535,7 @@ class Job {
         'taskNumber': data.taskRoles[i].taskNumber,
         'taskService': {
           'version': 0,
-          'entryPoint': `trap \"\" TERM; bash YarnContainerScripts/${i}.sh`,
+          'entryPoint': `trap \\"\\" TERM; bash YarnContainerScripts/${i}.sh`,
           'sourceLocations': [`/Container/${data.userName}/${data.jobName}/YarnContainerScripts`],
           'resource': {
             'cpuNumber': data.taskRoles[i].cpuNumber,
