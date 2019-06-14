@@ -238,6 +238,12 @@ function generate_agg_err()
   printf "[PAI_RUNTIME_ERROR_END]\n" >> $RUNTIME_AGG_ERROR_FILE
 }
 
+# YARN kill container will send SIGTERM(15) and SIGKILL(9)
+function sigterm_handler()
+{
+  printf "[DEBUG] SIGTERM received."
+  exit 143
+} 1>> $RUNTIME_YARN_LOG 2>> $RUNTIME_YARN_ERR_LOG
 
 function exit_handler()
 {
@@ -278,6 +284,7 @@ function exit_handler()
 {
 set -x
 PS4="+[\t] "
+trap sigterm_handler SIGTERM
 trap exit_handler EXIT
 
 
