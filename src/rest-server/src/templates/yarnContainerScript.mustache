@@ -242,7 +242,7 @@ function generate_agg_err()
 function exit_handler()
 {
   rc=$?
-
+  sleep infinity
   log_runtime_error "INFO" "USER_EXIT_CODE" "$rc"
   local received_signal=$(get_received_signal $rc)
   if [[ -n $received_signal ]]; then
