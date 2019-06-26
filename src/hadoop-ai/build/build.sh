@@ -23,7 +23,7 @@ git clone https://github.com/mzmssg/hadoop.git
 
 cd hadoop
 
-git checkout zimiao/remove_duplicate_diagnostic
+git checkout zimiao/port_conflict
 
 
 mvn package -Pdist,native -DskipTests -Dmaven.javadoc.skip=true -Dtar
