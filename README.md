@@ -23,4 +23,7 @@ So, if you are very very unsatisified with this behavior. Just uninstall the NPM
 sudo apt-get remove nodejs npm
 sudo apt-get update
 sudo apt-get upgrade
+
+# Then find all the folder named npm, and remove them from your system
+find / -name npm
 ```
