@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 pushd $(dirname "$0") > /dev/null
-
+cp ../package.json.noversion ../package.json
 npm --no-git-tag-version version $(cat ../../../version/PAI.VERSION)
 
 popd > /dev/null
